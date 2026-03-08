@@ -1,6 +1,7 @@
 """Application entrypoint wiring the Clean Architecture layers."""
 
 import os
+from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
 import uvicorn
@@ -11,7 +12,7 @@ from src.presentation.main.api import create_api_router
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):  # noqa: D401
+async def lifespan(_: FastAPI) -> AsyncIterator[None]:  # noqa: D401
     """Initialize resources on startup and dispose them at shutdown."""
     get_engine()
     try:
@@ -29,8 +30,8 @@ def create_app() -> FastAPI:
 
 def main() -> None:
     """Entrypoint for running the service via `python -m src.main`."""
-    host = os.getenv("APP_HOST", "0.0.0.0")
-    port = int(os.getenv("APP_PORT", "8000"))
+    host: str = os.getenv("APP_HOST", "0.0.0.0")
+    port: int = int(os.getenv("APP_PORT", "8000"))
     uvicorn.run("src.main:create_app", host=host, port=port, factory=True)
 
 

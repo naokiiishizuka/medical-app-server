@@ -37,9 +37,7 @@ def parse_args() -> argparse.Namespace:
 
 def validate_name(name: str) -> str:
     if not NAME_PATTERN.match(name):
-        raise SystemExit(
-            "Seed name must match '[a-z][a-z0-9_]*'. Got: {}".format(name)
-        )
+        raise SystemExit(f"Seed name must match '[a-z][a-z0-9_]*'. Got: {name}")
     return name
 
 

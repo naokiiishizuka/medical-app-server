@@ -63,6 +63,8 @@ src/
 
 `APP_HOST` / `APP_PORT` / `DATABASE_URL` など環境依存の設定は `.env` にまとめ、FastAPI と Docker Compose が共通で参照します。
 
+Lint: `ruff check .`（自動整形は `ruff format .`）
+
 ## データベース & マイグレーション
 
 - デフォルト接続文字列: `postgresql+asyncpg://postgres:postgres@localhost:5432/medical_app`（`DATABASE_URL` で上書き可）
