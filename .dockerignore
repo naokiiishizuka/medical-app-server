@@ -1,0 +1,9 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+.python-version
+.venv/
+build/
+dist/
+.env
+src/presentation/main/generated/
