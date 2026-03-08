@@ -4,6 +4,7 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 SPEC_FILE="${SPEC_FILE:-$ROOT_DIR/src/openapi/openapi.yaml}"
 OUTPUT_DIR="$ROOT_DIR/src/presentation/main/generated"
+export OUTPUT_DIR
 GENERATOR="${GENERATOR:-python-fastapi}"
 DOCKER_IMAGE="${DOCKER_IMAGE:-openapitools/openapi-generator-cli:v7.6.0}"
 GLOBAL_PROPERTIES="${GLOBAL_PROPERTIES:-models}"
@@ -71,5 +72,57 @@ if [ "$STRIP_TESTS" = "true" ]; then
     done
   done
 fi
+
+python3 <<'PY'
+import os
+from pathlib import Path
+
+base = Path(os.environ["OUTPUT_DIR"])
+src_dir = base / "src"
+models_dir = src_dir / "models"
+models_dir.mkdir(parents=True, exist_ok=True)
+
+model_files = sorted(
+    p.stem for p in models_dir.glob("*.py") if p.suffix == ".py" and p.name != "__init__.py"
+)
+
+def to_class_name(stem: str) -> str:
+    return "".join(part.capitalize() for part in stem.split("_") if part)
+
+generated_path = base / "__init__.py"
+src_init_path = src_dir / "__init__.py"
+models_init_path = models_dir / "__init__.py"
+
+if model_files:
+    class_names = [to_class_name(name) for name in model_files]
+    import_lines = ", ".join(class_names)
+    all_list = ", ".join(f'"{name}"' for name in class_names)
+    generated_path.write_text(
+        "\"\"\"Auto-generated models from OpenAPI specifications.\"\"\"\n\n"
+        f"from .src.models import {import_lines}\n\n"
+        f"__all__ = [{all_list}]\n",
+        encoding="utf-8",
+    )
+    body = "\n".join(
+        f"from .{module} import {cls}" for module, cls in zip(model_files, class_names)
+    )
+    models_init_path.write_text(
+        "\"\"\"Exports for generated models.\"\"\"\n\n"
+        f"{body}\n"
+        f"__all__ = [{all_list}]\n",
+        encoding="utf-8",
+    )
+else:
+    generated_path.write_text(
+        "\"\"\"Auto-generated models from OpenAPI specifications.\"\"\"\n\n"
+        "__all__ = []\n",
+        encoding="utf-8",
+    )
+    models_init_path.write_text(
+        "\"\"\"Exports for generated models.\"\"\"\n\n__all__ = []\n", encoding="utf-8"
+    )
+
+src_init_path.write_text("\"\"\"Generated source package.\"\"\"\n", encoding="utf-8")
+PY
 
 echo "Generated presentation interface under $OUTPUT_DIR"
